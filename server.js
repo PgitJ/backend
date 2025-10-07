@@ -1,3 +1,5 @@
+// backend/server.js - COMPLETO E ATUALIZADO
+
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
@@ -5,14 +7,53 @@ const authRouter = require('./auth');
 const authenticateToken = require('./middleware/auth');
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
 app.use('/auth', authRouter);
 
-// Adiciona o middleware a todas as rotas que precisam de autenticação
+// --- Rotas da API para Categorias ---
+app.get('/api/categories', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const result = await db.query('SELECT * FROM categories WHERE user_id = $1 ORDER BY name', [userId]);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/categories', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { name } = req.body;
+    const result = await db.query(
+      'INSERT INTO categories (name, user_id) VALUES ($1, $2) RETURNING *',
+      [name, userId]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/categories/:name', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { name } = req.params;
+    const result = await db.query('DELETE FROM categories WHERE name = $1 AND user_id = $2 RETURNING *', [name, userId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Categoria não encontrada' });
+    }
+    res.json({ message: 'Categoria deletada com sucesso' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Rotas da API para Transações ---
 app.get('/api/transactions', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
