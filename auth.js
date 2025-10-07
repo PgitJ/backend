@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('./db');
-
+const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 const SECRET_KEY = process.env.SECRET_KEY;
 
