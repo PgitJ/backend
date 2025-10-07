@@ -2,6 +2,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const { v4: uuidv4 } = require('uuid');
 const db = require('./db');
 const authRouter = require('./auth');
 const authenticateToken = require('./middleware/auth');
@@ -71,14 +72,30 @@ app.get('/api/transactions', authenticateToken, async (req, res) => {
 app.post('/api/transactions', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { date, description, category, type, amount } = req.body;
+    // 1. GERAÇÃO DO ID: Crie um novo ID único para a transação
+    const transactionId = uuidv4(); 
+    
+    // 2. Cria o objeto de dados final (incluindo o ID)
+    const transactionData = { ...req.body, id: transactionId };
+
+    // 3. (Sua função de DB) Envia o ID e os dados para o banco
     const result = await db.query(
-      'INSERT INTO transactions (date, description, category, type, amount, user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [date, description, category, type, amount, userId]
+      'INSERT INTO transactions (id, user_id, description, amount, date, type, category) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [
+        transactionId, // O ID deve ser passado aqui
+        userId,
+        transactionData.description,
+        transactionData.amount,
+        transactionData.date,
+        transactionData.type,
+        transactionData.category,
+      ]
     );
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Falha ao criar a transação.' });
   }
 });
 
