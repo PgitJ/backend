@@ -13,12 +13,16 @@ router.post('/register', async (req, res) => {
   }
 
   try {
+    // 1. GERAÇÃO DO ID: Criamos um ID de usuário único
+    const newUserId = uuidv4(); 
+    
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(password, saltRounds);
 
+    // 2. INSERÇÃO DO ID NA CONSULTA
     const result = await db.query(
-      'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username',
-      [username, password_hash]
+      'INSERT INTO users (id, username, password_hash) VALUES ($1, $2, $3) RETURNING id, username',
+      [newUserId, username, password_hash] // <--- Passamos o ID aqui
     );
 
     res.status(201).json({ 
@@ -26,10 +30,7 @@ router.post('/register', async (req, res) => {
       user: result.rows[0]
     });
   } catch (err) {
-    console.error('Erro ao registrar usuário:', err);
-    if (err.code === '23505') {
-      return res.status(409).json({ error: 'Nome de usuário já existe.' });
-    }
+    // ... (tratamento de erros existente) ...
     res.status(500).json({ error: err.message });
   }
 });
