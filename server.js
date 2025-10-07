@@ -9,30 +9,11 @@ const authenticateToken = require('./middleware/auth');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = [
-    'https://backend-u2li.onrender.com', // Seu próprio domínio Render
-    'https://frontend-w5jy.vercel.app', // Seu domínio Vercel (se estiver usando ele)
-    'http://localhost:5173',            // Seu ambiente de desenvolvimento local
-    'http://127.0.0.1:5173',            // Outra forma de localhost
-];
-
-const corsOptions = {
-    origin: (origin, callback) => {
-        // Permite requisições sem origem (como do Postman ou requisições do próprio servidor)
-        if (!origin) return callback(null, true); 
-        
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true); // Origem permitida
-        } else {
-            // Se a origem não estiver na lista, rejeita
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true, // Necessário para cookies ou cabeçalhos de autorização
-};
-
-app.use(cors(corsOptions));
+app.use(cors({
+    origin: '*', // Permite qualquer origem (curinga)
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // Permite todos os métodos
+    credentials: true, // Necessário para enviar o token JWT
+}));
 app.use(express.json());
 
 app.use('/auth', authRouter);
